@@ -1,0 +1,22 @@
+name = "cfwaibot"
+main = "src/index.ts"
+compatibility_date = "2025-01-29"
+workers_dev = false
+
+[observability]
+enabled = true
+
+[vars]
+BOT_INFO = """{
+    "id": 1234567890,
+    "is_bot": true,
+    "first_name": "mybot",
+    "username": "MyBot",
+    "can_join_groups": true,
+    "can_read_all_group_messages": false,
+    "supports_inline_queries": true,
+    "can_connect_to_business": false
+}"""
+[[routes]]
+pattern = "cfwaibot.incbx.us.kg"
+custom_domain = true
