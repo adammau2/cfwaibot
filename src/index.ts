@@ -18,23 +18,32 @@ export default {
     const workersai = createWorkersAI({ binding: env.AI });
     const model = workersai("@cf/meta/llama-2-7b-chat-int8");
 
-    bot.on("msg:text", async (ctx: Context) => {
+    async function generateResponse(prompt: string): Promise<string> {
+      const response = await generateText({
+        model: model,
+        prompt: prompt
+      });
+      return response.text;
+    }
+
+    async function handleMessageText(ctx: Context) {
       await ctx.replyWithChatAction("typing");
       const userMessage = ctx.message?.text;
+
       if (userMessage) {
         try {
-          const response = await generateText({
-            model: model,
-            prompt: userMessage
-          });
-          await ctx.reply(response.text, {
-            reply_parameters: { message_id: ctx.msg.message_id }
+          const response = await generateResponse(userMessage);
+          await ctx.reply(response, {
+            reply_to_message_id: ctx.msg.message_id
           });
         } catch (err) {
           await ctx.reply((err as Error).message);
         }
       }
-    });
+    }
+
+    bot.on("message:text", handleMessageText);
+
     return webhookCallback(bot, "cloudflare-mod")(request);
   }
 };
