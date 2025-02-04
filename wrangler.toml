@@ -20,3 +20,6 @@ BOT_INFO = """{
 [[routes]]
 pattern = "cfwaibot.incbx.us.kg"
 custom_domain = true
+
+[ai]
+binding = "AI"
