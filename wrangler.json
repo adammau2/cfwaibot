@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cfwaibot",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-29",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "BOT_INFO": {
+      "id": 7624197572,
+      "is_bot": true,
+      "first_name": "CfwAIBot",
+      "username": "CfwAI_bot",
+      "can_join_groups": true,
+      "can_read_all_group_messages": false,
+      "supports_inline_queries": false,
+      "can_connect_to_business": false,
+      "has_main_web_app": false
+    }
+  },
+  "routes": [
+    {
+      "pattern": "cfwaibot.incbx.us.kg",
+      "custom_domain": true
+    }
+  ],
+  "workers_dev": false
+}
