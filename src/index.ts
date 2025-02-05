@@ -9,7 +9,6 @@ interface SessionData {
 interface MyContext extends Context, SessionFlavor<SessionData> {}
 
 export interface Env {
-  BOT_INFO: string;
   BOT_TOKEN: string;
   AI: any;
 }
@@ -20,9 +19,7 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    const bot = new Bot<MyContext>(env.BOT_TOKEN, {
-      botInfo: JSON.parse(env.BOT_INFO)
-    });
+    const bot = new Bot<MyContext>(env.BOT_TOKEN);
 
     bot.use(session({ initial: () => ({ context: [] }) }));
 
