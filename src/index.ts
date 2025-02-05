@@ -12,6 +12,7 @@ export interface Env {
   BOT_TOKEN: string;
   AI: any;
 }
+const sessions: Record<string, SessionData> = {};
 
 export default {
   async fetch(
@@ -21,7 +22,15 @@ export default {
   ): Promise<Response> {
     const bot = new Bot<MyContext>(env.BOT_TOKEN);
 
-    bot.use(session({ initial: () => ({ context: [] }) }));
+    bot.use((ctx, next) => {
+      const userId = ctx.from?.id;
+      if (userId) {
+        ctx.session = sessions[userId] || { context: [] };
+      } else {
+        ctx.session = { context: [] };
+      }
+      return next();
+    });
 
     const workersai = createWorkersAI({ binding: env.AI });
     const model = workersai("@cf/meta/llama-2-7b-chat-int8");
@@ -57,10 +66,19 @@ export default {
 
     async function handleReset(ctx: MyContext) {
       ctx.session = { context: [] };
-      await ctx.reply("Session has been reset!");
+      await ctx.reply("Session has been reset!", {
+        reply_to_message_id: ctx.msg.message_id
+      });
+    }
+    async function handleRead(ctx: MyContext) {
+      const response = ctx.session.context.join("\n");
+      await ctx.reply("Current session: " + response, {
+        reply_to_message_id: ctx.msg.message_id
+      });
     }
 
     bot.command("reset", handleReset);
+    bot.command("read", handleRead);
     bot.on("message:text", handleMessageText);
 
     return webhookCallback(bot, "cloudflare-mod")(request);
