@@ -61,10 +61,7 @@ export default {
         try {
           const response = await generateResponse(prompt);
           ctx.session.context.push(response);
-          await ctx.reply(response, {
-            reply_to_message_id: ctx.msg?.message_id,
-          });
-
+          await ctx.reply(response);
           await saveSession(ctx.from?.id, ctx.session);
         } catch (err) {
           await ctx.reply("Something went wrong: " + (err as Error).message);
@@ -75,16 +72,12 @@ export default {
     const handleReset = async (ctx: CustomContext): Promise<void> => {
       ctx.session = { context: [] };
       await saveSession(ctx.from?.id, ctx.session);
-      await ctx.reply("Session has been reset!", {
-        reply_to_message_id: ctx.msg?.message_id,
-      });
+      await ctx.reply("Session has been reset!");
     };
 
     const handleRead = async (ctx: CustomContext): Promise<void> => {
       const response = ctx.session.context.join("\n");
-      await ctx.reply("Current session: " + response, {
-        reply_to_message_id: ctx.msg?.message_id,
-      });
+      await ctx.reply("Current session: " + response);
     };
 
     bot.command("reset", handleReset);
