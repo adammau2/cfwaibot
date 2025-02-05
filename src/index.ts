@@ -1,6 +1,6 @@
 import { createWorkersAI } from "workers-ai-provider";
 import { generateText } from "ai";
-import { Bot, Context, webhookCallback, session, SessionFlavor } from "grammy";
+import { Bot, Context, webhookCallback, SessionFlavor } from "grammy";
 
 interface SessionData {
   context: string[];
@@ -11,8 +11,8 @@ interface MyContext extends Context, SessionFlavor<SessionData> {}
 export interface Env {
   BOT_TOKEN: string;
   AI: any;
+  SESSION_STORE: KVNamespace;
 }
-const sessions: Record<string, SessionData> = {};
 
 export default {
   async fetch(
@@ -22,30 +22,39 @@ export default {
   ): Promise<Response> {
     const bot = new Bot<MyContext>(env.BOT_TOKEN);
 
-    bot.use((ctx, next) => {
+    bot.use(async (ctx, next) => {
       const userId = ctx.from?.id;
+
       if (userId) {
-        ctx.session = sessions[userId] || { context: [] };
+        const storedSession = await env.SESSION_STORE.get(userId);
+        ctx.session = storedSession
+          ? JSON.parse(storedSession)
+          : { context: [] };
       } else {
         ctx.session = { context: [] };
       }
       return next();
     });
 
+    const saveSession = async (userId: string, sessionData: SessionData) => {
+      await env.SESSION_STORE.put(userId, JSON.stringify(sessionData));
+    };
+
     const workersai = createWorkersAI({ binding: env.AI });
     const model = workersai("@cf/meta/llama-2-7b-chat-int8");
 
-    async function generateResponse(prompt: string): Promise<string> {
+    const generateResponse = async (prompt: string): Promise<string> => {
       const response = await generateText({ model, prompt });
       return response.text;
-    }
+    };
 
-    async function handleMessageText(ctx: MyContext) {
+    const handleMessageText = async (ctx: MyContext) => {
       const userMessage = ctx.message?.text;
 
       if (userMessage) {
         await ctx.replyWithChatAction("typing");
         ctx.session.context.push(userMessage);
+
         if (ctx.session.context.length > 5) {
           ctx.session.context.shift();
         }
@@ -58,24 +67,28 @@ export default {
           await ctx.reply(response, {
             reply_to_message_id: ctx.msg.message_id
           });
+
+          await saveSession(ctx.from.id, ctx.session);
         } catch (err) {
-          await ctx.reply("Something wrong: " + (err as Error).message);
+          await ctx.reply("Something went wrong: " + (err as Error).message);
         }
       }
-    }
+    };
 
-    async function handleReset(ctx: MyContext) {
+    const handleReset = async (ctx: MyContext) => {
       ctx.session = { context: [] };
+      await saveSession(ctx.from.id, ctx.session);
       await ctx.reply("Session has been reset!", {
         reply_to_message_id: ctx.msg.message_id
       });
-    }
-    async function handleRead(ctx: MyContext) {
+    };
+
+    const handleRead = async (ctx: MyContext) => {
       const response = ctx.session.context.join("\n");
       await ctx.reply("Current session: " + response, {
         reply_to_message_id: ctx.msg.message_id
       });
-    }
+    };
 
     bot.command("reset", handleReset);
     bot.command("read", handleRead);
