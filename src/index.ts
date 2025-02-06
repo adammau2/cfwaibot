@@ -15,10 +15,7 @@ export default {
       const userId = ctx.from?.id?.toString();
 
       if (userId) {
-        const storedSession = await env.SESSION_STORE.get(userId);
-        ctx.session = storedSession
-          ? JSON.parse(storedSession)
-          : { context: [] };
+        ctx.session = sessions[userId] || { context: [] };
       } else {
         ctx.session = { context: [] };
       }
@@ -40,10 +37,10 @@ export default {
       }
     };
 
-    const generateResponse = async (prompt: string): Promise<string> => {
+    async function generateResponse(prompt: string): Promise<string> {
       const response = await generateText({ model, prompt });
       return response.text;
-    };
+    }
 
     const handleMessageText = async (ctx: CustomContext): Promise<void> => {
       const userMessage = ctx.message?.text;
@@ -51,7 +48,6 @@ export default {
       if (userMessage) {
         await ctx.replyWithChatAction("typing");
         ctx.session.context.push(userMessage);
-
         if (ctx.session.context.length > 5) {
           ctx.session.context.shift();
         }
@@ -64,7 +60,7 @@ export default {
           await ctx.reply(response);
           await saveSession(ctx.from?.id, ctx.session);
         } catch (err) {
-          await ctx.reply("Something went wrong: " + (err as Error).message);
+          await ctx.reply("Something wrong: " + (err as Error).message);
         }
       }
     };
@@ -85,5 +81,5 @@ export default {
     bot.on("message:text", handleMessageText);
 
     return webhookCallback(bot, "cloudflare-mod")(request);
-  },
+  }
 };
