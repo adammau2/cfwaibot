@@ -12,7 +12,7 @@ export default {
     const bot = new Bot(env.BOT_TOKEN);
 
     const workersai = createWorkersAI({ binding: env.AI });
-    const model = workersai("@cf/meta/llama-3.3-70b-instruct-fp8-fast");
+    const model = workersai("@cf/meta/llama-2-7b-chat-int8");
 
     const generateResponse = async (prompt: string): Promise<string> => {
       const response = await generateText({ model, prompt });
