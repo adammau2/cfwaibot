@@ -40,6 +40,47 @@ export default {
       }
     };
 
+    const splitMessage = (message, maxLength = 4096): Promise<string[]> => {
+      const messages = [];
+
+      while (message.length > maxLength) {
+        const splitIndex = message.lastIndexOf("\n", maxLength);
+        const part =
+          splitIndex !== -1
+            ? message.substring(0, splitIndex)
+            : message.substring(0, maxLength);
+
+        messages.push(part);
+        message = message.substring(part.length);
+      }
+
+      if (message.length > 0) {
+        messages.push(message);
+      }
+
+      return messages;
+    };
+    const retryGenerateResponse = async (
+      prompt,
+      retries = 3
+    ): Promise<string> => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await generateResponse(prompt);
+          return response;
+        } catch (err) {
+          if (
+            err.message.includes("Capacity temporarily exceeded") &&
+            i < retries - 1
+          ) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          } else {
+            throw err;
+          }
+        }
+      }
+    };
+
     const generateResponse = async (prompt: string): Promise<string> => {
       const response = await generateText({ model, prompt });
       return response.text;
@@ -59,9 +100,14 @@ export default {
         const prompt = ctx.session.context.join("\n");
 
         try {
-          const response = await generateResponse(prompt);
+          const response = await retryGenerateResponse(prompt);
+
           ctx.session.context.push(response);
-          await ctx.reply(response);
+
+          const responseParts = splitMessage(response);
+          for (const part of responseParts) {
+            await ctx.reply(part);
+          }
           await saveSession(ctx.from?.id, ctx.session);
         } catch (err) {
           await ctx.reply("Something went wrong: " + (err as Error).message);
@@ -85,5 +131,5 @@ export default {
     bot.on("message:text", handleMessageText);
 
     return webhookCallback(bot, "cloudflare-mod")(request);
-  },
+  }
 };
