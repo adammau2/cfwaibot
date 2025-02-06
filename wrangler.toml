@@ -12,3 +12,7 @@ custom_domain = true
 
 [ai]
 binding = "AI"
+
+[[kv_namespaces]]
+binding = "SESSION_STORE"
+id = "23990fc97a1f49ef83bf0dc0ceb52712"
