@@ -7,7 +7,7 @@ workers_dev = false
 enabled = true
 
 [[routes]]
-pattern = "cfwaibot.incbx.us.kg"
+pattern = "cfwaibot.bumn.us.kg"
 custom_domain = true
 
 [ai]
@@ -15,4 +15,4 @@ binding = "AI"
 
 [[kv_namespaces]]
 binding = "SESSION_STORE"
-id = "23990fc97a1f49ef83bf0dc0ceb52712"
+id = "17e9478b0f5343c48b2a3787a5274cff"
